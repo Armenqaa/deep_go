@@ -49,7 +49,7 @@ func (q *CircularQueue) Back() int {
 	if q.Empty() {
 		return -1
 	}
-	return q.values[(q.start+q.filled)%len(q.values)]
+	return q.values[(q.start+q.filled-1)%len(q.values)]
 }
 
 func (q *CircularQueue) Empty() bool {
