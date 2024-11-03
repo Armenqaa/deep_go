@@ -24,7 +24,7 @@ func (q *CircularQueue) Push(value int) bool {
 	if q.Full() {
 		return false
 	}
-	q.values[(q.start+q.filled)%len(q.values)] = value
+	q.values[(q.start+q.filled)%q.Cap()] = value
 	q.filled++
 	return true
 
@@ -43,14 +43,14 @@ func (q *CircularQueue) Front() int {
 	if q.Empty() {
 		return -1
 	}
-	return q.values[q.start%len(q.values)]
+	return q.values[q.start%q.Cap()]
 }
 
 func (q *CircularQueue) Back() int {
 	if q.Empty() {
 		return -1
 	}
-	return q.values[(q.start+q.filled-1)%len(q.values)]
+	return q.values[(q.start+q.filled-1)%q.Cap()]
 }
 
 func (q *CircularQueue) Empty() bool {
@@ -58,7 +58,11 @@ func (q *CircularQueue) Empty() bool {
 }
 
 func (q *CircularQueue) Full() bool {
-	return q.filled == len(q.values)
+	return q.filled == q.Cap()
+}
+
+func (q *CircularQueue) Cap() int {
+	return cap(q.values)
 }
 
 func TestCircularQueue(t *testing.T) {
