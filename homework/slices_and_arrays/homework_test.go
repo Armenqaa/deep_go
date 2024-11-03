@@ -10,13 +10,14 @@ import (
 // go test -v homework_test.go
 
 type CircularQueue struct {
-	values []int
-	start  int
-	filled int
+	values        []int
+	start, filled int
 }
 
 func NewCircularQueue(size int) CircularQueue {
-	return CircularQueue{make([]int, size), 0, 0}
+	return CircularQueue{
+		values: make([]int, size),
+	}
 }
 
 func (q *CircularQueue) Push(value int) bool {
