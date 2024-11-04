@@ -8,14 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// go test -v homework_test.go
-
-type CircularQueue struct {
+type CircularQueueOpt struct {
 	values             unsafe.Pointer
 	start, filled, cap int
 }
 
-func NewCircularQueue(size int) CircularQueue {
+func NewCircularQueueOpt(size int) CircularQueueOpt {
 	values := make([]int, size)
 	return CircularQueue{
 		values: unsafe.Pointer(&values[0]),
@@ -23,7 +21,7 @@ func NewCircularQueue(size int) CircularQueue {
 	}
 }
 
-func (q *CircularQueue) Push(value int) bool {
+func (q *CircularQueueOpt) Push(value int) bool {
 	if q.Full() {
 		return false
 	}
@@ -34,7 +32,7 @@ func (q *CircularQueue) Push(value int) bool {
 
 }
 
-func (q *CircularQueue) Pop() bool {
+func (q *CircularQueueOpt) Pop() bool {
 	if q.Empty() {
 		return false
 	}
@@ -43,40 +41,40 @@ func (q *CircularQueue) Pop() bool {
 	return true
 }
 
-func (q *CircularQueue) Front() int {
+func (q *CircularQueueOpt) Front() int {
 	if q.Empty() {
 		return -1
 	}
 	return *q.valueAt(q.start)
 }
 
-func (q *CircularQueue) Back() int {
+func (q *CircularQueueOpt) Back() int {
 	if q.Empty() {
 		return -1
 	}
 	return *q.valueAt(q.start+q.filled-1)
 }
 
-func (q *CircularQueue) Empty() bool {
+func (q *CircularQueueOpt) Empty() bool {
 	return q.filled == 0
 }
 
-func (q *CircularQueue) Full() bool {
+func (q *CircularQueueOpt) Full() bool {
 	return q.filled == q.Cap()
 }
 
-func (q *CircularQueue) Cap() int {
+func (q *CircularQueueOpt) Cap() int {
 	return q.cap
 }
 
-func (q *CircularQueue) valueAt(i int) *int {
+func (q *CircularQueueOpt) valueAt(i int) *int {
 	sizeInt := (int)(unsafe.Sizeof(int(0)))
 	return (*int)(unsafe.Add(q.values, sizeInt*(i%q.Cap())))
 }
 
-func TestCircularQueue(t *testing.T) {
+func TestCircularQueueOpt(t *testing.T) {
 	const queueSize = 3
-	queue := NewCircularQueue(queueSize)
+	queue := NewCircularQueueOpt(queueSize)
 
 	assert.True(t, queue.Empty())
 	assert.False(t, queue.Full())
