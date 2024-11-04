@@ -15,7 +15,7 @@ type CircularQueueOpt struct {
 
 func NewCircularQueueOpt(size int) CircularQueueOpt {
 	values := make([]int, size)
-	return CircularQueue{
+	return CircularQueueOpt{
 		values: unsafe.Pointer(&values[0]),
 		cap:    size,
 	}
@@ -25,8 +25,7 @@ func (q *CircularQueueOpt) Push(value int) bool {
 	if q.Full() {
 		return false
 	}
-	old := q.valueAt(q.start+q.filled)
-	*old = value
+	*(q.valueAt(q.start+q.filled)) = value
 	q.filled++
 	return true
 
