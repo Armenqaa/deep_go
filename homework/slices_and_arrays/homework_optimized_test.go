@@ -1,36 +1,37 @@
 package main
 
 import (
-	"reflect"
+	// "reflect"
 	"testing"
+	"unsafe"
 
 	"github.com/stretchr/testify/assert"
 )
 
-// go test -v homework_test.go
-
-type CircularQueue struct {
-	values        []int
-	start, filled int
+type CircularQueueOpt struct {
+	values             unsafe.Pointer
+	start, filled, cap int
 }
 
-func NewCircularQueue(size int) CircularQueue {
-	return CircularQueue{
-		values: make([]int, size),
+func NewCircularQueueOpt(size int) CircularQueueOpt {
+	values := make([]int, size)
+	return CircularQueueOpt{
+		values: unsafe.Pointer(&values[0]),
+		cap:    size,
 	}
 }
 
-func (q *CircularQueue) Push(value int) bool {
+func (q *CircularQueueOpt) Push(value int) bool {
 	if q.Full() {
 		return false
 	}
-	q.values[(q.start+q.filled)%q.Cap()] = value
+	*(q.valueAt(q.start+q.filled)) = value
 	q.filled++
 	return true
 
 }
 
-func (q *CircularQueue) Pop() bool {
+func (q *CircularQueueOpt) Pop() bool {
 	if q.Empty() {
 		return false
 	}
@@ -39,35 +40,40 @@ func (q *CircularQueue) Pop() bool {
 	return true
 }
 
-func (q *CircularQueue) Front() int {
+func (q *CircularQueueOpt) Front() int {
 	if q.Empty() {
 		return -1
 	}
-	return q.values[q.start%q.Cap()]
+	return *q.valueAt(q.start)
 }
 
-func (q *CircularQueue) Back() int {
+func (q *CircularQueueOpt) Back() int {
 	if q.Empty() {
 		return -1
 	}
-	return q.values[(q.start+q.filled-1)%q.Cap()]
+	return *q.valueAt(q.start+q.filled-1)
 }
 
-func (q *CircularQueue) Empty() bool {
+func (q *CircularQueueOpt) Empty() bool {
 	return q.filled == 0
 }
 
-func (q *CircularQueue) Full() bool {
+func (q *CircularQueueOpt) Full() bool {
 	return q.filled == q.Cap()
 }
 
-func (q *CircularQueue) Cap() int {
-	return cap(q.values)
+func (q *CircularQueueOpt) Cap() int {
+	return q.cap
 }
 
-func TestCircularQueue(t *testing.T) {
+func (q *CircularQueueOpt) valueAt(i int) *int {
+	sizeInt := (int)(unsafe.Sizeof(int(0)))
+	return (*int)(unsafe.Add(q.values, sizeInt*(i%q.Cap())))
+}
+
+func TestCircularQueueOpt(t *testing.T) {
 	const queueSize = 3
-	queue := NewCircularQueue(queueSize)
+	queue := NewCircularQueueOpt(queueSize)
 
 	assert.True(t, queue.Empty())
 	assert.False(t, queue.Full())
@@ -81,7 +87,7 @@ func TestCircularQueue(t *testing.T) {
 	assert.True(t, queue.Push(3))
 	assert.False(t, queue.Push(4))
 
-	assert.True(t, reflect.DeepEqual([]int{1, 2, 3}, queue.values))
+	// assert.True(t, reflect.DeepEqual([]int{1, 2, 3}, queue.values))
 
 	assert.False(t, queue.Empty())
 	assert.True(t, queue.Full())
@@ -94,7 +100,7 @@ func TestCircularQueue(t *testing.T) {
 	assert.False(t, queue.Full())
 	assert.True(t, queue.Push(4))
 
-	assert.True(t, reflect.DeepEqual([]int{4, 2, 3}, queue.values))
+	// assert.True(t, reflect.DeepEqual([]int{4, 2, 3}, queue.values))
 
 	assert.Equal(t, 2, queue.Front())
 	assert.Equal(t, 4, queue.Back())
