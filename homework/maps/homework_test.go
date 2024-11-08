@@ -18,10 +18,7 @@ type OrderedMap struct {
 }
 
 func NewOrderedMap() OrderedMap {
-	return OrderedMap{
-		head: nil,
-		len:  0,
-	}
+	return OrderedMap{}
 }
 
 func (m *OrderedMap) Insert(key, value int) {
@@ -70,7 +67,6 @@ func (m *OrderedMap) Size() int {
 }
 
 func (m *OrderedMap) ForEach(action func(int, int)) {
-
 	m.inOrderAction(m.head, action)
 }
 
