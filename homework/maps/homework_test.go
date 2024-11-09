@@ -18,7 +18,10 @@ type OrderedMap struct {
 }
 
 func NewOrderedMap() OrderedMap {
-	return OrderedMap{}
+	return OrderedMap{
+		head: nil,
+		len:  0,
+	}
 }
 
 func (m *OrderedMap) Insert(key, value int) {
@@ -36,30 +39,11 @@ func (m *OrderedMap) Erase(key int) {
 		return
 	}
 
-	nodepp := m.find(&m.head, key)
-	if nodepp == nil {
-		// not found
-		return
-	}
-
-	m.len--
-	nodep := *nodepp
-	if nodep.left == nil && nodep.right == nil {
-		*nodepp = nil
-	} else if nodep.left != nil && nodep.right != nil {
-		min := m.findMin(&nodep.right)
-		nodep.key = (*min).key
-		nodep.value = (*min).value
-		*min = nil
-	} else if nodep.left != nil {
-		*nodepp = nodep.left
-	} else {
-		*nodepp = nodep.right
-	}
+	m.head = m.delete(m.head, key)
 }
 
 func (m *OrderedMap) Contains(key int) bool {
-	return m.find(&m.head, key) != nil
+	return m.find(m.head, key) != nil
 }
 
 func (m *OrderedMap) Size() int {
@@ -79,25 +63,59 @@ func (m *OrderedMap) inOrderAction(curr *TNode, action func(int, int)) {
 	m.inOrderAction(curr.right, action)
 }
 
-func (m *OrderedMap) find(curr **TNode, key int) **TNode {
-	if curr == nil || *curr == nil {
-		return nil
-	}
-	if (*curr).key == key {
-		return curr
-	}
+func (m *OrderedMap) delete(curr *TNode, key int) *TNode {
+	if curr.key < key {
+		curr.right = m.delete(curr.right, key)
+	} else if curr.key > key {
+		curr.left = m.delete(curr.left, key)
+	} else {
+		// key found
+		m.len--
 
-	if (*curr).key < key {
-		return m.find(&(*curr).right, key)
+		childrenCount := 0
+		if curr.left != nil {
+			childrenCount++
+		}
+		if curr.right != nil {
+			childrenCount++
+		}
+
+		switch childrenCount {
+		case 0:
+			return nil
+		case 1:
+			if curr.left != nil {
+				return curr.left
+			}
+			return curr.right
+		case 2:
+			min := m.findMin(curr.right)
+			curr.key, curr.value = min.key, min.value
+			curr.right = m.delete(curr.right, min.key)
+		}
 	}
-	return m.find(&(*curr).left, key)
+	return curr
 }
 
-func (m *OrderedMap) findMin(curr **TNode) **TNode {
-	if (*curr).left == nil {
+func (m *OrderedMap) find(curr *TNode, key int) *TNode {
+	if curr == nil {
+		return nil
+	}
+	if curr.key == key {
 		return curr
 	}
-	return m.findMin(&(*curr).left)
+
+	if curr.key < key {
+		return m.find(curr.right, key)
+	}
+	return m.find(curr.left, key)
+}
+
+func (m *OrderedMap) findMin(curr *TNode) *TNode {
+	if curr.left == nil {
+		return curr
+	}
+	return m.findMin(curr.left)
 }
 
 func (m *OrderedMap) insert(curr *TNode, toInsert *TNode) *TNode {
