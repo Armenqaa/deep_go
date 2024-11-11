@@ -71,28 +71,15 @@ func (m *OrderedMap) delete(curr *TNode, key int) *TNode {
 	} else {
 		// key found
 		m.len--
-
-		childrenCount := 0
-		if curr.left != nil {
-			childrenCount++
-		}
-		if curr.right != nil {
-			childrenCount++
-		}
-
-		switch childrenCount {
-		case 0:
-			return nil
-		case 1:
-			if curr.left != nil {
-				return curr.left
-			}
+		if curr.left == nil {
 			return curr.right
-		case 2:
-			min := m.findMin(curr.right)
-			curr.key, curr.value = min.key, min.value
-			curr.right = m.delete(curr.right, min.key)
 		}
+		else if curr.right == nil {
+			return curr.left
+		}
+		min := m.findMin(curr.right)
+		curr.key, curr.value = min.key, min.value
+		curr.right = m.delete(curr.right, min.key)
 	}
 	return curr
 }
