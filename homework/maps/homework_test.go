@@ -73,8 +73,7 @@ func (m *OrderedMap) delete(curr *TNode, key int) *TNode {
 		m.len--
 		if curr.left == nil {
 			return curr.right
-		}
-		else if curr.right == nil {
+		} else if curr.right == nil {
 			return curr.left
 		}
 		min := m.findMin(curr.right)
