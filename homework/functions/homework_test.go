@@ -34,11 +34,11 @@ func Filter(data []int, action func(int) bool) []int {
 }
 
 func Reduce(data []int, initial int, action func(int, int) int) int {
-	sum := initial
+	res := initial
 	for _, v := range data {
-		sum += v
+		res = action(res, v)
 	}
-	return sum
+	return res
 }
 
 func TestMap(t *testing.T) {
