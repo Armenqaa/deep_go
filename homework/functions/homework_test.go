@@ -8,10 +8,6 @@ import (
 )
 
 func Map(data []int, action func(int) int) []int {
-	if data == nil {
-		return nil
-	}
-
 	action_data := make([]int, len(data))
 	for i, v := range data {
 		action_data[i] = action(v)
@@ -20,17 +16,13 @@ func Map(data []int, action func(int) int) []int {
 }
 
 func Filter(data []int, action func(int) bool) []int {
-	if data == nil {
-		return nil
-	}
-
-	filter_data := make([]int, 0)
+	var filterData []int
 	for _, v := range data {
 		if action(v) {
-			filter_data = append(filter_data, v)
+			filterData = append(filterData, v)
 		}
 	}
-	return filter_data
+	return filterData
 }
 
 func Reduce(data []int, initial int, action func(int, int) int) int {
