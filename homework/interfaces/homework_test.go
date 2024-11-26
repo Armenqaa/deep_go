@@ -22,25 +22,25 @@ type SomeSingletonService struct {
 	NotEmptyStruct bool
 }
 
-type Constructor interface {
-	Construct() any
+type constructor interface {
+	construct() any
 }
 
-type BasicConstructor struct {
+type basicConstructor struct {
 	f	func() any
 }
 
-func (bc BasicConstructor) Construct() any {
+func (bc basicConstructor) construct() any {
 	return bc.f()
 }
 
-type SingletonConstructor struct {
+type singletonConstructor struct {
 	f 	 func() any
 	called	 bool
 	instance any
 }
 
-func (sc *SingletonConstructor) Construct() any {
+func (sc *SingletonConstructor) construct() any {
 	if !sc.called {
 		sc.called = true
 		sc.instance = sc.f()
@@ -49,12 +49,12 @@ func (sc *SingletonConstructor) Construct() any {
 }
 
 type Container struct {
-	constructors map[string]Constructor
+	constructors map[string]constructor
 }
 
 func NewContainer() *Container {
 	return &Container{
-		constructors: map[string]Constructor{},
+		constructors: map[string]constructor{},
 	}
 }
 
@@ -72,7 +72,7 @@ func (c *Container) Resolve(name string) (any, error) {
 		return nil, fmt.Errorf("constructor not found")
 	}
 
-	return constructor.Construct(), nil
+	return constructor.construct(), nil
 }
 
 func TestDIContainer(t *testing.T) {
