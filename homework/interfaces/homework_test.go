@@ -40,7 +40,7 @@ type singletonConstructor struct {
 	instance any
 }
 
-func (sc *SingletonConstructor) construct() any {
+func (sc *singletonConstructor) construct() any {
 	if !sc.called {
 		sc.called = true
 		sc.instance = sc.f()
@@ -59,11 +59,11 @@ func NewContainer() *Container {
 }
 
 func (c *Container) RegisterType(name string, constructor func() any) {
-	c.constructors[name] = BasicConstructor{f: constructor}
+	c.constructors[name] = basicConstructor{f: constructor}
 }
 
 func (c *Container) RegisterSingletonType(name string, constructor func() any) {
-	c.constructors[name] = &SingletonConstructor{f: constructor}
+	c.constructors[name] = &singletonConstructor{f: constructor}
 }
 
 func (c *Container) Resolve(name string) (any, error) {
