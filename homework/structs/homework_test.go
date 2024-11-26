@@ -8,12 +8,53 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	nameMaxSize = 42
+	endOfString byte = '\000'
+
+	// shift and masks for manaHp
+	manaShiftTopBits = 2
+	manaShiftLowBits = 6
+	manaMaskLowBits  = 0b11000000
+
+	healthShiftTopBits = 8
+	healthMaskTopBits  = 0b00000011
+	healthMaskLowBits  = 0b11111111
+
+	// shift and masks for respectStrength
+	respectShift = 4
+	respectMask  = 0b11110000
+	strengthMask = 0b00001111
+
+	// shift and masks for lvlExp
+	levelShift     = 4
+	levelMask      = 0b11110000
+	experienceMask = 0b00001111
+
+	// shift and masks for typeHouseGunFamily
+	hasHouseBit  = 2
+	hasGunBit    = 1
+	hasFamilyBit = 0
+	typeShift    = 3
+	typeMask     = 0b00011000
+)
+
+const (
+	BuilderGamePersonType = iota
+	BlacksmithGamePersonType
+	WarriorGamePersonType
+)
+
 type Option func(*GamePerson)
 
 func WithName(name string) func(*GamePerson) {
 	return func(person *GamePerson) {
 		for i, v := range name {
 			person.name[i] = byte(v)
+		}
+
+		if len(name) < nameMaxSize {
+			person.name[len(name)] = endOfString
 		}
 	}
 }
@@ -32,21 +73,21 @@ func WithGold(gold int) func(*GamePerson) {
 
 func WithMana(mana int) func(*GamePerson) {
 	return func(person *GamePerson) {
-		person.manaHp[0] = byte(mana >> 2)
-		person.manaHp[1] |= byte((mana << 6) & 0b11000000)
+		person.manaHp[0] = byte(mana >> manaShiftTopBits)
+		person.manaHp[1] |= byte((mana << manaShiftLowBits) & manaMaskLowBits)
 	}
 }
 
 func WithHealth(health int) func(*GamePerson) {
 	return func(person *GamePerson) {
-		person.manaHp[1] |= byte(health >> 8)
-		person.manaHp[2] = byte(health & 0b0011111111)
+		person.manaHp[1] |= byte(health >> healthShiftTopBits)
+		person.manaHp[2] = byte(health & 0xFF)
 	}
 }
 
 func WithRespect(respect int) func(*GamePerson) {
 	return func(person *GamePerson) {
-		person.respectStrength |= byte(respect << 4)
+		person.respectStrength |= byte(respect << respectShift)
 	}
 }
 
@@ -58,7 +99,7 @@ func WithStrength(strength int) func(*GamePerson) {
 
 func WithLevel(level int) func(*GamePerson) {
 	return func(person *GamePerson) {
-		person.lvlExp |= byte(level << 4)
+		person.lvlExp |= byte(level << levelShift)
 	}
 }
 
@@ -70,42 +111,36 @@ func WithExperience(experience int) func(*GamePerson) {
 
 func WithHouse() func(*GamePerson) {
 	return func(person *GamePerson) {
-		person.typeHouseGunFamily |= 0b00000100
+		person.typeHouseGunFamily |= 1 << hasHouseBit
 	}
 }
 
 func WithGun() func(*GamePerson) {
 	return func(person *GamePerson) {
-		person.typeHouseGunFamily |= 0b00000010
+		person.typeHouseGunFamily |= 1 << hasGunBit
 	}
 }
 
 func WithFamily() func(*GamePerson) {
 	return func(person *GamePerson) {
-		person.typeHouseGunFamily |= 0b00000001
+		person.typeHouseGunFamily |= 1 << hasFamilyBit
 	}
 }
 
 func WithType(personType int) func(*GamePerson) {
 	return func(person *GamePerson) {
-		person.typeHouseGunFamily |= byte(personType) << 3
+		person.typeHouseGunFamily |= byte(personType) << typeShift
 	}
 }
-
-const (
-	BuilderGamePersonType = iota
-	BlacksmithGamePersonType
-	WarriorGamePersonType
-)
 
 type GamePerson struct {
 	x, y, z            int32
 	gold               uint32
-	manaHp             [3]byte
-	respectStrength    byte
-	lvlExp             byte
-	typeHouseGunFamily byte
-	name               [42]byte
+	manaHp             [3]byte // 10 bits for both numbers. 0s byte with 2 top bits of 1st byte is Mana, 2 low bits of 1st byte with 2nd byte is Health.
+	respectStrength    byte    // 4 top bits for respect, 4 low bits for strength
+	lvlExp             byte    // 4 top bits for level, 4 low bits for experience
+	typeHouseGunFamily byte    // first low bit is family, next is gun, next is house, next 2 bites is type
+	name               [nameMaxSize]byte
 }
 
 func NewGamePerson(options ...Option) GamePerson {
@@ -118,7 +153,14 @@ func NewGamePerson(options ...Option) GamePerson {
 }
 
 func (p *GamePerson) Name() string {
-	return string(p.name[:])
+	var currLength int
+	for _, v := range p.name {
+		if v == endOfString {
+			break
+		}
+		currLength++
+	}
+	return unsafe.String(&p.name[0], currLength)
 }
 
 func (p *GamePerson) X() int {
@@ -138,50 +180,50 @@ func (p *GamePerson) Gold() int {
 }
 
 func (p *GamePerson) Mana() int {
-	return int(p.manaHp[0])<<2 + int(p.manaHp[1]&0b11000000>>6)
+	return int(p.manaHp[0])<<manaShiftTopBits + int(p.manaHp[1]&manaMaskLowBits>>manaShiftLowBits)
 }
 
 func (p *GamePerson) Health() int {
-	return int(p.manaHp[1])&0b00000011<<8 + int(p.manaHp[2])
+	return int(p.manaHp[1])&healthMaskTopBits<<healthShiftTopBits + int(p.manaHp[2])
 }
 
 func (p *GamePerson) Respect() int {
-	return int(p.respectStrength & 0b11110000 >> 4)
+	return int(p.respectStrength & respectMask >> respectShift)
 }
 
 func (p *GamePerson) Strength() int {
-	return int(p.respectStrength & 0b00001111)
+	return int(p.respectStrength & strengthMask)
 }
 
 func (p *GamePerson) Level() int {
-	return int(p.lvlExp & 0b11110000 >> 4)
+	return int(p.lvlExp & levelMask >> levelShift)
 }
 
 func (p *GamePerson) Experience() int {
-	return int(p.lvlExp & 0b00001111)
+	return int(p.lvlExp & experienceMask)
 }
 
 func (p *GamePerson) HasHouse() bool {
-	return p.typeHouseGunFamily&0b00000100>>2 == 1
+	return p.typeHouseGunFamily&(1 << hasHouseBit) != 0
 }
 
 func (p *GamePerson) HasGun() bool {
-	return p.typeHouseGunFamily&0b00000010>>1 == 1
+	return p.typeHouseGunFamily&(1 << hasGunBit) != 0
 }
 
 func (p *GamePerson) HasFamily() bool {
-	return p.typeHouseGunFamily&0b00000001 == 1
+	return p.typeHouseGunFamily&(1 << hasFamilyBit) != 0
 }
 
 func (p *GamePerson) Type() int {
-	return int(p.typeHouseGunFamily & 0b00011000 >> 3)
+	return int(p.typeHouseGunFamily & typeMask >> typeShift)
 }
 
 func TestGamePerson(t *testing.T) {
 	assert.LessOrEqual(t, unsafe.Sizeof(GamePerson{}), uintptr(64))
 
 	const x, y, z = math.MinInt32, math.MaxInt32, 0
-	const name = "aaaaaaaaaaaaa_bbbbbbbbbbbbb_cccccccccccccc"
+	const name = "aaaaaaaaaaaaa"
 	const personType = BuilderGamePersonType
 	const gold = math.MaxInt32
 	const mana = 1000
