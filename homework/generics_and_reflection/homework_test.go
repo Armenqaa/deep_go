@@ -1,6 +1,8 @@
 package main
 
 import (
+	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -30,7 +32,7 @@ func Serialize(person Person) string {
 		tagName := strings.Replace(tag, ",omitempty", "", -1)
 		res = append(res, fmt.Sprintf("%s=%v", tagName, v.Field(i)))
 	}
-	fmt.Println(strings.Join(res, "\n"))
+	return strings.Join(res, "\n")
 }
 
 func TestSerialization(t *testing.T) {
