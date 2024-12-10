@@ -53,6 +53,7 @@ func TestMap(t *testing.T) {
 			action: func(number int) int {
 				return -number
 			},
+			result: []int{}
 		},
 		"inc numbers": {
 			data: []int{1, 2, 3, 4, 5},
@@ -94,7 +95,6 @@ func TestFilter(t *testing.T) {
 			action: func(number int) bool {
 				return number == 1
 			},
-			result: []int{},
 		},
 		"even numbers": {
 			data: []int{1, 2, 3, 4, 5},
