@@ -53,7 +53,7 @@ func TestMap(t *testing.T) {
 			action: func(number int) int {
 				return -number
 			},
-			result: []int{}
+			result: []int{},
 		},
 		"inc numbers": {
 			data: []int{1, 2, 3, 4, 5},
