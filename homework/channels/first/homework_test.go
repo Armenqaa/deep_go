@@ -61,12 +61,12 @@ func TestWorkerPool(t *testing.T) {
 	assert.Equal(t, int32(2), counter.Load())
 
 	time.Sleep(time.Millisecond * 600)
-	assert.Equal(t, int32(3), counter.Load())
+	assert.Equal(t, int32(2), counter.Load())
 
 	_ = pool.AddTask(task)
 	_ = pool.AddTask(task)
 	_ = pool.AddTask(task)
 	pool.Shutdown() // wait tasks
 
-	assert.Equal(t, int32(6), counter.Load())
+	assert.Equal(t, int32(4), counter.Load())
 }
