@@ -12,24 +12,19 @@ import (
 
 func Defragment(memory []byte, pointers []unsafe.Pointer) {
 	// здесь работаем в предположении, что fragmentedPointer'ы расположены последовательно, иначе нужна map'a
-	var lastIdx int
-	for lastIdx < len(memory) {
-		p := unsafe.Pointer(&memory[lastIdx])
-		if p != pointers[lastIdx] {
-			break
+	var lastFreeIdx int
+	for currIdx := range len(memory) {
+		p := unsafe.Pointer(&memory[currIdx])
+		if lastFreeIdx < len(pointers) && p == pointers[lastFreeIdx] {
+			memory[lastFreeIdx] = *(*byte)(pointers[lastFreeIdx])
+			pointers[lastFreeIdx] = unsafe.Pointer(&memory[lastFreeIdx])
+			lastFreeIdx++
 		}
-		lastIdx++
 	}
 
-	for lastIdx < len(pointers) {
-		memory[lastIdx] = *(*byte)(pointers[lastIdx])
-		pointers[lastIdx] = unsafe.Pointer(&memory[lastIdx])
-		lastIdx++
-	}
-
-	for lastIdx < len(memory) {
-		memory[lastIdx] = 0x00
-		lastIdx++
+	for lastFreeIdx < len(memory) {
+		memory[lastFreeIdx] = 0x00
+		lastFreeIdx++
 	}
 }
 
