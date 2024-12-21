@@ -13,7 +13,7 @@ import (
 
 type Person struct {
 	Name    string `properties:"name"`
-	Address string `properties:"address,omitempty"`
+	Address string `properties:"omitempty,address"`
 	Age     int    `properties:"age"`
 	Married bool   `properties:"married"`
 }
@@ -30,7 +30,8 @@ func Serialize(person Person) string {
 		if v.Field(i).IsZero() && strings.Contains(tag, "omitempty") {
 			continue
 		}
-		tagName := strings.Replace(tag, ",omitempty", "", -1)
+		tagName := strings.ReplaceAll(tag, ",omitempty", "")
+		tagName = strings.ReplaceAll(tagName, "omitempty,", "")
 		res = append(res, fmt.Sprintf("%s=%v", tagName, v.Field(i)))
 	}
 	return strings.Join(res, "\n")
