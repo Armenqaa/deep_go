@@ -1,7 +1,8 @@
-package main
+package main_2
 
 import (
 	"errors"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
