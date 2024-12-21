@@ -10,7 +10,7 @@ import (
 )
 
 type RWMutex struct {
-	mu      *sync.Mutex
+	mu      sync.Mutex
 	readers int
 }
 
