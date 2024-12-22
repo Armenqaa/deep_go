@@ -12,15 +12,17 @@ type Task struct {
 }
 
 type Scheduler struct {
-	heap []Task
+	heap            []Task
+	taskIDToHeapIdx map[int]int
 }
 
 func NewScheduler() Scheduler {
-	return Scheduler{heap: make([]Task, 0)}
+	return Scheduler{taskIDToHeapIdx: make(map[int]int), heap: make([]Task, 0)}
 }
 
 func (s *Scheduler) AddTask(task Task) {
 	s.heap = append(s.heap, task)
+	s.taskIDToHeapIdx[task.Identifier] = len(s.heap) - 1
 	s.pushTop(len(s.heap) - 1)
 }
 
@@ -38,29 +40,29 @@ func (s *Scheduler) ChangeTaskPriority(taskID int, newPriority int) {
 }
 
 func (s *Scheduler) GetTask() Task {
+	fmt.Println(s.taskIDToHeapIdx)
+	top := s.heap[0]
+	delete(s.taskIDToHeapIdx, s.heap[0].Identifier)
+
 	s.heap[0], s.heap[len(s.heap)-1] = s.heap[len(s.heap)-1], s.heap[0]
-	task := s.heap[len(s.heap)-1]
 	s.heap = s.heap[:len(s.heap)-1]
+
+	s.taskIDToHeapIdx[s.heap[0].Identifier] = 0
 	s.pushDown(0)
-	return task
+
+	return top
 }
 
-// не придумал и не нашел способа сделать это не за O(n)
-// в целом можно хранить индексы в мапе, но это тяжело поддерживать в pushTop/pushDown
 func (s *Scheduler) findByTaskID(taskID int) int {
-	for i, t := range s.heap {
-		if t.Identifier == taskID {
-			return i
-		}
-	}
-
-	return -1
+	return s.taskIDToHeapIdx[taskID]
 }
 
 func (s *Scheduler) pushTop(i int) {
 	parentIdx := (i - 1) / 2
 	for i > 0 && s.heap[parentIdx].Priority < s.heap[i].Priority {
 		s.heap[parentIdx], s.heap[i] = s.heap[i], s.heap[parentIdx]
+		s.taskIDToHeapIdx[s.heap[i].Identifier] = i
+		s.taskIDToHeapIdx[s.heap[parentIdx].Identifier] = parentIdx
 		i, parentIdx = parentIdx, (parentIdx-1)/2
 
 	}
@@ -86,6 +88,8 @@ func (s *Scheduler) pushDown(i int) {
 		}
 
 		s.heap[i], s.heap[maxIdx] = s.heap[maxIdx], s.heap[i]
+		s.taskIDToHeapIdx[s.heap[i].Identifier] = i
+		s.taskIDToHeapIdx[s.heap[maxIdx].Identifier] = maxIdx
 		i = maxIdx
 	}
 }
