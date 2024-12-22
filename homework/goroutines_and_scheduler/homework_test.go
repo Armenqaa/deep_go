@@ -2,79 +2,74 @@ package main
 
 import (
 	"testing"
-	
+
 	"github.com/stretchr/testify/assert"
 )
 
-type Task struct {
-	Identifier int
-	Priority   int
+type KeyWithPriority struct {
+	ID int
+	P  int
 }
 
-type Scheduler struct {
-	heap            []Task
-	taskIDToHeapIdx map[int]int
+type Heap struct {
+	data     []KeyWithPriority
+	keyToIdx map[int]int
 }
 
-func NewScheduler() Scheduler {
-	return Scheduler{taskIDToHeapIdx: make(map[int]int), heap: make([]Task, 0)}
+func NewHeap() Heap {
+	return Heap{keyToIdx: make(map[int]int), data: make([]KeyWithPriority, 0)}
 }
 
-func (s *Scheduler) AddTask(task Task) {
-	s.heap = append(s.heap, task)
-	s.taskIDToHeapIdx[task.Identifier] = len(s.heap) - 1
-	s.pushTop(len(s.heap) - 1)
+func (h *Heap) Add(kv KeyWithPriority) {
+	h.data = append(h.data, kv)
+	h.keyToIdx[kv.ID] = len(h.data) - 1
+	h.pushTop(len(h.data) - 1)
 }
 
-func (s *Scheduler) ChangeTaskPriority(taskID int, newPriority int) {
-	heapIdx := s.findByTaskID(taskID)
+func (h *Heap) GetTop() KeyWithPriority {
+	top := h.data[0]
+	delete(h.keyToIdx, h.data[0].ID)
 
-	prevPriority := s.heap[heapIdx].Priority
-	s.heap[heapIdx].Priority = newPriority
+	h.data[0], h.data[len(h.data)-1] = h.data[len(h.data)-1], h.data[0]
+	h.data = h.data[:len(h.data)-1]
 
-	if newPriority > prevPriority {
-		s.pushTop(heapIdx)
-	} else {
-		s.pushDown(heapIdx)
-	}
-}
-
-func (s *Scheduler) GetTask() Task {
-	top := s.heap[0]
-	delete(s.taskIDToHeapIdx, s.heap[0].Identifier)
-
-	s.heap[0], s.heap[len(s.heap)-1] = s.heap[len(s.heap)-1], s.heap[0]
-	s.heap = s.heap[:len(s.heap)-1]
-
-	s.taskIDToHeapIdx[s.heap[0].Identifier] = 0
-	s.pushDown(0)
+	h.keyToIdx[h.data[0].ID] = 0
+	h.pushDown(0)
 
 	return top
 }
 
-func (s *Scheduler) findByTaskID(taskID int) int {
-	return s.taskIDToHeapIdx[taskID]
-}
+func (h *Heap) ChangePriority(key int, newPriority int) {
+	heapIdx := h.keyToIdx[key]
 
-func (s *Scheduler) pushTop(i int) {
-	parentIdx := (i - 1) / 2
-	for i > 0 && s.heap[parentIdx].Priority < s.heap[i].Priority {
-		s.heap[parentIdx], s.heap[i] = s.heap[i], s.heap[parentIdx]
-		s.taskIDToHeapIdx[s.heap[i].Identifier] = i
-		s.taskIDToHeapIdx[s.heap[parentIdx].Identifier] = parentIdx
-		i, parentIdx = parentIdx, (parentIdx-1)/2
+	prevPriority := h.data[heapIdx].P
+	h.data[heapIdx].P = newPriority
 
+	if newPriority > prevPriority {
+		h.pushTop(heapIdx)
+	} else {
+		h.pushDown(heapIdx)
 	}
 }
 
-func (s *Scheduler) pushDown(i int) {
+func (h *Heap) pushTop(i int) {
+	parentIdx := (i - 1) / 2
+	for i > 0 && h.data[parentIdx].P < h.data[i].P {
+		h.data[parentIdx], h.data[i] = h.data[i], h.data[parentIdx]
+		h.keyToIdx[h.data[i].ID] = i
+		h.keyToIdx[h.data[parentIdx].ID] = parentIdx
+		i, parentIdx = parentIdx, (parentIdx-1)/2
+	}
+}
+
+func (h *Heap) pushDown(i int) {
 	maxByIdx := func(left, right int) int {
-		n := len(s.heap)
+		n := len(h.data)
 		if left >= n && right >= n {
 			return -1
 		}
 
-		if right < n && s.heap[left].Priority < s.heap[right].Priority {
+		if right < n && h.data[left].P < h.data[right].P {
 			return right
 		}
 		return left
@@ -82,14 +77,44 @@ func (s *Scheduler) pushDown(i int) {
 
 	for {
 		maxIdx := maxByIdx(2*i+1, 2*i+2)
-		if maxIdx == -1 || s.heap[i].Priority >= s.heap[maxIdx].Priority {
+		if maxIdx == -1 || h.data[i].P >= h.data[maxIdx].P {
 			break
 		}
 
-		s.heap[i], s.heap[maxIdx] = s.heap[maxIdx], s.heap[i]
-		s.taskIDToHeapIdx[s.heap[i].Identifier] = i
-		s.taskIDToHeapIdx[s.heap[maxIdx].Identifier] = maxIdx
+		h.data[i], h.data[maxIdx] = h.data[maxIdx], h.data[i]
+		h.keyToIdx[h.data[i].ID] = i
+
+		h.keyToIdx[h.data[maxIdx].ID] = maxIdx
 		i = maxIdx
+	}
+}
+
+type Task struct {
+	Identifier int
+	Priority   int
+}
+
+type Scheduler struct {
+	heap Heap
+}
+
+func NewScheduler() Scheduler {
+	return Scheduler{heap: NewHeap()}
+}
+
+func (s *Scheduler) AddTask(task Task) {
+	s.heap.Add(KeyWithPriority{ID: task.Identifier, P: task.Priority})
+}
+
+func (s *Scheduler) ChangeTaskPriority(taskID int, newPriority int) {
+	s.heap.ChangePriority(taskID, newPriority)
+}
+
+func (s *Scheduler) GetTask() Task {
+	kv := s.heap.GetTop()
+	return Task{
+		Identifier: kv.ID,
+		Priority:   kv.P,
 	}
 }
 
