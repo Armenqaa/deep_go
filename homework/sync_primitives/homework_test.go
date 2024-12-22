@@ -17,10 +17,10 @@ type RWMutex struct {
 func (m *RWMutex) Lock() {
 	for {
 		m.mu.Lock()
-		if m.readers > 0 {
-			m.mu.Unlock()
-			continue
+		if m.readers == 0 {
+			break
 		}
+		m.mu.Unlock()
 	}
 }
 
