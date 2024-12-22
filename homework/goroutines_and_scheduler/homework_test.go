@@ -40,7 +40,6 @@ func (s *Scheduler) ChangeTaskPriority(taskID int, newPriority int) {
 }
 
 func (s *Scheduler) GetTask() Task {
-	fmt.Println(s.taskIDToHeapIdx)
 	top := s.heap[0]
 	delete(s.taskIDToHeapIdx, s.heap[0].Identifier)
 
